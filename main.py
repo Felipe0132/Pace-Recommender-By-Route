@@ -49,7 +49,7 @@ if modo == "Upload":
     if file is not None and st.session_state.G is None:
         with st.spinner("⏳ Processando GPX e baixando malha viária/relevo..."):
             import gpxpy
-            gpx = gpxpy.parse(file, G)
+            gpx = gpxpy.parse(file)
             p0 = gpx.tracks[0].segments[0].points[0]
 
             G = ox.graph_from_point([p0.latitude, p0.longitude], dist=2500, network_type='walk')
@@ -61,7 +61,26 @@ if modo == "Upload":
             st.session_state.full_path = full_path
             st.session_state.rotas = [parsers.extract_from_dijk(G, full_path)]
             st.session_state.pontos = [{'lat': G.nodes[full_path[0]]['y'], 'lng': G.nodes[full_path[0]]['x']}]
+
+            st.session_state.graphPonder = pc.defineSegmentsWithElevation(G, full_path) # Only to refresh won and less
+            if st.session_state.graphPonder is not None:
+                g_tot, p_tot = pc.elevationTotalsFromGraph(st.session_state.graphPonder)
+                st.session_state.total_ganhos = g_tot
+                st.session_state.total_percas = p_tot
+                st.session_state.distancias = [d['distance'] for _, _, d in st.session_state.graphPonder.edges(data=True)]
+
             st.rerun()
+
+    if st.session_state.full_path is not None and st.session_state.G is not None:
+        if st.session_state.distancias:
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Distância total", f"{sum(st.session_state.distancias):.0f} m")
+            col2.metric("↑ Subida total", f"{st.session_state.total_ganhos:.0f} m")
+            col3.metric("↓ Descida total", f"{st.session_state.total_percas:.0f} m")
+
+        start_gpx = [st.session_state.G.nodes[st.session_state.full_path[0]]['y'], st.session_state.G.nodes[st.session_state.full_path[0]]['x']]
+        m_gpx = renders.render_map_main(start_gpx, st.session_state.pontos, st.session_state.rotas)
+        st_folium(m_gpx, width=700, height=500, key="mapa_gpx")
 
 else:
     localizacao = streamlit_geolocation()
