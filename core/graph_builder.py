@@ -4,7 +4,7 @@ import utils.utils as utils
 import Enums.enum as enum
 
 TRHESHOLD_INC = 3
-TRHESHOLD_DIST = 432
+TRHESHOLD_DIST = 430
 
 def points_to_graph(points):
     """
