@@ -1,0 +1,8 @@
+streamlit
+streamlit_geolocation
+streamlit_folium
+folium
+osmnx
+scikit-learn
+matplotlib
+gpxpy
