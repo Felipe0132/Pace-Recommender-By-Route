@@ -45,7 +45,7 @@ def render_map_main(start_coords, points, path):
 
     return m
 
-def render_map_groupBy(start_coords, G_groupBy, G_base):
+def render_map_groupBy(start_coords, G_groupBy, G_base=None):
     # Render map of a gruped of relevo
 
     m = folium.Map(location=start_coords, zoom_start=15)
@@ -56,8 +56,14 @@ def render_map_groupBy(start_coords, G_groupBy, G_base):
         inclinacao = data.get('inclinacao', 0)
         coords = data.get('coords', [])
 
-        if u in G_base.nodes:
+        if G_base is not None and u in G_base.nodes:
             u_coord = [G_base.nodes[u]['y'], G_base.nodes[u]['x']]
+        elif coords:
+            u_coord = coords[0]
+        else:
+            u_coord = None
+
+        if u_coord:
             folium.CircleMarker(
                 location=u_coord,
                 radius=6,
