@@ -1,3 +1,5 @@
+import heapq
+
 def dijkstra(G, origin, destination):
     """
     Finds the shortest path between two nodes in an OSMnx graph using Dijkstra's algorithm.
@@ -9,48 +11,52 @@ def dijkstra(G, origin, destination):
 
     Returns:
         path: ordered list of node IDs from origin to destination
+        distance: total distance in meters
     """
-    nodes = list(G.nodes)
-    distances = {node: float('inf') for node in nodes}
-    distances[origin] = 0
+    if origin not in G or destination not in G:
+        return [], 0
+
+    if origin == destination:
+        return [origin], 0
+
+    distances = {origin: 0}
+    previous = {}
+    pq = [(0, origin)]
     visited = set()
-    previous = {node: None for node in nodes}
 
-    while True:
-        # Pick unvisited node with smallest distance
-        u = None
-        for node in nodes:
-            if node not in visited:
-                if u is None or distances[node] < distances[u]:
-                    u = node    
+    while pq:
+        dist_u, u = heapq.heappop(pq)
 
-        if u is None or distances[u] == float('inf'):
-            break  # All remaining nodes are unreachable
-
-        if u == destination:
-            break  # Reached destination
-
+        if u in visited:
+            continue
         visited.add(u)
 
-        # Explore neighbors
+        if u == destination:
+            break
+
+        if u not in G:
+            continue
+
         for v, edge_data in G[u].items():
-            # OSMnx MultiDiGraph: edge_data is a dict of {edge_key: attributes}
             edge_length = min(d.get('length', float('inf')) for d in edge_data.values())
-            alt = distances[u] + edge_length
-            if alt < distances[v]:
+            alt = dist_u + edge_length
+            if alt < distances.get(v, float('inf')):
                 distances[v] = alt
                 previous[v] = u
+                heapq.heappush(pq, (alt, v))
 
-    # Reconstruct path from destination back to origin
+    if destination not in previous and origin != destination:
+        return [], 0
+
     path = []
-    current = destination
-    while current is not None:
-        path.append(current)
-        current = previous[current]
+    curr = destination
+    while curr is not None:
+        path.append(curr)
+        curr = previous.get(curr)
 
     path.reverse()
 
-    if path[0] != origin:
-        return [], 0  # No path found
+    if not path or path[0] != origin:
+        return [], 0
 
-    return path, distances[destination]
+    return path, distances.get(destination, 0)

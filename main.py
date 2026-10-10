@@ -171,6 +171,9 @@ else:
 
                             full_path = parsers.group_by_path(legs_paths)
                             st.session_state.full_path = full_path
+                    else:
+                        pontos.pop()
+                        st.warning("⚠️ Não foi possível encontrar uma rota a pé até esse ponto. Tente clicar mais próximo de uma via conectada.")
 
                     st.rerun()
     else:
