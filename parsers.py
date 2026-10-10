@@ -33,12 +33,22 @@ def extract_from_dijk(G, path):
     coords = []
     for u, v in zip(path[:-1], path[1:]): # one to one
         if v in G[u]:
-            edge = min(G[u][v].values(), key=lambda d: d.get('length', float('inf'))) # Do the same step of dijsktra, but to register the coords between
+            edge = min(G[u][v].values(), key=lambda d: d.get('length', float('inf')))
             if 'geometry' in edge:
                 coords.extend([[lat, lng] for lng, lat in edge['geometry'].coords])
             else:
                 coords.append([G.nodes[u]['y'], G.nodes[u]['x']])
                 coords.append([G.nodes[v]['y'], G.nodes[v]['x']])
+        elif u in G[v]:
+            edge = min(G[v][u].values(), key=lambda d: d.get('length', float('inf')))
+            if 'geometry' in edge:
+                coords.extend([[lat, lng] for lng, lat in reversed(list(edge['geometry'].coords))])
+            else:
+                coords.append([G.nodes[u]['y'], G.nodes[u]['x']])
+                coords.append([G.nodes[v]['y'], G.nodes[v]['x']])
+        else:
+            coords.append([G.nodes[u]['y'], G.nodes[u]['x']])
+            coords.append([G.nodes[v]['y'], G.nodes[v]['x']])
     return coords
 
 def group_by_path(path_select):

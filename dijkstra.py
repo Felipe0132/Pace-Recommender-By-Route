@@ -3,6 +3,7 @@ import heapq
 def dijkstra(G, origin, destination):
     """
     Finds the shortest path between two nodes in an OSMnx graph using Dijkstra's algorithm.
+    Allows bidirectional traversal suitable for runners/pedestrians.
 
     Args:
         G: OSMnx graph (MultiDiGraph)
@@ -24,6 +25,9 @@ def dijkstra(G, origin, destination):
     pq = [(0, origin)]
     visited = set()
 
+    # Create undirected view so runners can traverse any street in both directions
+    G_undirected = G.to_undirected(as_view=True) if hasattr(G, 'to_undirected') else G
+
     while pq:
         dist_u, u = heapq.heappop(pq)
 
@@ -34,10 +38,10 @@ def dijkstra(G, origin, destination):
         if u == destination:
             break
 
-        if u not in G:
+        if u not in G_undirected:
             continue
 
-        for v, edge_data in G[u].items():
+        for v, edge_data in G_undirected[u].items():
             edge_length = min(d.get('length', float('inf')) for d in edge_data.values())
             alt = dist_u + edge_length
             if alt < distances.get(v, float('inf')):
