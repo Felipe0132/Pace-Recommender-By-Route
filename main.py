@@ -49,7 +49,7 @@ if modo == "Upload":
     if file is not None and st.session_state.G is None:
         with st.spinner("⏳ Processando GPX e baixando malha viária/relevo..."):
             import gpxpy
-            gpx = gpxpy.parse(file)
+            gpx = gpxpy.parse(file, G)
             p0 = gpx.tracks[0].segments[0].points[0]
 
             G = ox.graph_from_point([p0.latitude, p0.longitude], dist=2500, network_type='walk')
@@ -171,6 +171,12 @@ else:
 
                             full_path = parsers.group_by_path(legs_paths)
                             st.session_state.full_path = full_path
+
+                            st.session_state.graphPonder = pc.defineSegmentsWithElevation(G_atual, full_path) # Only to refresh won and less
+                            if st.session_state.graphPonder is not None:
+                                g_total, p_total = pc.elevationTotalsFromGraph(st.session_state.graphPonder)
+                                st.session_state.total_ganhos = g_total
+                                st.session_state.total_percas = p_total
                     else:
                         pontos.pop()
                         st.warning("⚠️ Não foi possível encontrar uma rota a pé até esse ponto. Tente clicar mais próximo de uma via conectada.")
