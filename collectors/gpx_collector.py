@@ -6,6 +6,9 @@ import networkx as nx
 def extract_points_gpx(file_gpx):
     # Extract point to point in gpx file
 
+    if hasattr(file_gpx, 'seek'):
+        file_gpx.seek(0)
+
     if isinstance(file_gpx, str): # If recive string in st.upload
         with open(file_gpx, 'r') as f:
             gpx = gpxpy.parse(f)

@@ -1,5 +1,6 @@
 import collectors.gpx_collector as gpx_collector
 import core.graph_builder as graph_builder
+import utils.utils as utils
 
 def process_gpx_route(file_gpx):
     """
@@ -8,8 +9,14 @@ def process_gpx_route(file_gpx):
     """
 
     points = gpx_collector.extract_points_gpx(file_gpx)
+    total_dist = sum(
+        utils.haversine_distance(p1, p2) 
+        for p1, p2 in zip(points[:-1], points[1:])
+    )
+    lim20per = total_dist * 0.20
+
     G_segment = graph_builder.points_to_graph(points)
-    G_grouped = graph_builder.groupByRelevo(G_segment)
+    G_grouped = graph_builder.groupByRelevo(G_segment, max_dist=lim20per)
     segments, dist, up, down = extract_infs(G_grouped)
 
     return G_segment, G_grouped, segments, dist, up, down

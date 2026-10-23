@@ -33,15 +33,15 @@ def define_paces_by_segment(bloco_segments, pace):
         if is_plano:
             contador_planos += 1
             # Usa o pace alvo direto (ou suaviza a inclinação do falso plano: inc * 0.25)
-            pace_base = pace 
+            pace_base = pace
             
             if i == 1:
                 # Se o 1º trecho da prova for plano, segura 1% (ex: 04:53) p/ aquecer,
                 # ou use 0.99 se já quiser que saia abaixo de 04:50 (ex: 04:47)
-                fator_progressao = 1.04
+                fator_progressao = 1.05
             else:
                 # A partir do 2º plano, baixa 1.5% a cada plano
-                fator_progressao = 1.0 - (contador_planos * 0.01)
+                fator_progressao = 1.0 - (contador_planos * 0.005)
                 
             pace_atual = pace_base * fator_progressao
         else:
@@ -50,9 +50,9 @@ def define_paces_by_segment(bloco_segments, pace):
 
         # Sprint final / último plano (sem acumular com descida forte)
         if i+1 == total_segmentos and total_segmentos > 1:
-            pace_atual = pace_base * 0.95
+            pace_atual = pace_base * fator_progressao*0.97
         elif i == ultimo_plano and i != 1:
-            pace_atual = pace_base * 0.9
+            pace_atual = pace_base * fator_progressao*0.95
 
         segmentos[i] = round(pace_atual, 2)
         

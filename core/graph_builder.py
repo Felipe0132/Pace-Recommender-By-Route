@@ -98,7 +98,7 @@ def points_to_graph(points):
 
     return G
 
-def groupByRelevo(G):
+def groupByRelevo(G, max_dist=None):
     # Group egdes to same relevo in sequence, do a super edge
     # That Node is extremes of conjunt relevos equals
 
@@ -127,7 +127,9 @@ def groupByRelevo(G):
             firstNode = u
             relevo_atual = relevo
 
-        if relevo == relevo_atual:
+        dentro_do_limite = (max_dist is None) or ((dist_acum + dist) <= max_dist)
+
+        if relevo == relevo_atual and dentro_do_limite:
             dist_acum += dist
             coords_seg.extend(coords)
             up_acum += up
@@ -147,6 +149,7 @@ def groupByRelevo(G):
                 inc=heigthest,
                 color=enum.ColorByRelevo[relevo_atual.name].value
             )
+
             firstNode = u
             relevo_atual = relevo
             dist_acum = dist
