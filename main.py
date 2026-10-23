@@ -76,10 +76,10 @@ if segments:
     paces_by_segment = pr.define_paces_by_segment(segments, total_segundos)
 
     df_paces, tempo_total_str, pace_medio_str = utils.paces_to_dataframe(segments, paces_by_segment, total_segundos)
-    st.subheader("🎯 Ritmo Recomendado por Segmento")
+    st.subheader("Ritmo Recomendado por Segmento")
     col_t1, col_t2 = st.columns(2)
-    col_t1.metric("⏱️ Tempo Total Previsto", tempo_total_str)
-    col_t2.metric("⚡ Pace Médio Geral", pace_medio_str)
+    col_t1.metric("Tempo Total Previsto", tempo_total_str)
+    col_t2.metric("Pace Médio Geral", pace_medio_str)
     st.dataframe(df_paces, use_container_width=True, hide_index=True)
 
 if m:
@@ -110,7 +110,7 @@ if m:
         st.dataframe(df, use_container_width=True, hide_index=True)
 
         # Plota o grafo topológico diretamente no frontend com nós, pesos e cores
-        st.subheader("🕸️ Topologia do Grafo Ponderado")
+        st.subheader("Topologia do Grafo Ponderado")
         fig_grafo = chvi.plot_graph_topology(G_grouped)
         if fig_grafo:
             st.pyplot(fig_grafo)
