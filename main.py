@@ -18,9 +18,9 @@ st.title("Recomendador de Pace referente a parametros de relevancia antes nao ca
 st.markdown(
     """
     <div style="background: rgba(255, 255, 255, 0.05); padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); margin-bottom: 15px;">
-        <span style="font-size: 15px; font-weight: 600;">⏱️ Pace Alvo no Plano:</span>
+        <span style="font-size: 15px; font-weight: 600;">⏱️ Pace Base de Referência (no Plano):</span>
         <span style="color: #4CAF50; font-size: 18px; font-weight: 700; margin-left: 8px;">min / km</span>
-        <div style="font-size: 12px; color: #888; margin-top: 2px;">Defina os minutos e segundos do seu ritmo base desejado</div>
+        <div style="font-size: 12px; color: #888; margin-top: 2px;">Defina os minutos e segundos do seu ritmo alvo em terreno plano</div>
     </div>
     """,
     unsafe_allow_html=True
@@ -34,6 +34,17 @@ with col_seg:
 
 total_segundos = minutos * 60 + segundos
 st.caption(f"🏁 Ritmo Selecionado: **{minutos:02d}:{segundos:02d} min/km** ({total_segundos}s)")
+
+st.info(
+    """
+    ℹ️ **Como funciona o cálculo de ritmo?**
+    * **Pace de Referência:** O valor definido acima é o seu ritmo alvo para **terreno plano (0% de inclinação)**.
+    * **Esforço Fisiológico Constante (Minetti et al., 2002 / GAP):** O algoritmo calcula o custo metabólico real de cada inclinação para que seu esforço cardiovascular permaneça constante ao longo de toda a rota.
+    * **🔺 Subidas:** O ritmo é dosado proporcionalmente à inclinação para poupar energia e evitar a fadiga por acúmulo de lactato.
+    * **🔻 Descidas:** O ritmo acelera com controle biomecânico (trava de segurança em declives acentuados) para amortecimento e proteção articular contra impacto excessivo.
+    * **➖ Trechos Planos:** Aplica aquecimento gradual no primeiro trecho (+5%) e aceleração progressiva tática ao longo da prova.
+    """
+)
 
 mode = st.radio("Passagem da Rota:", ['Manual', "GPX"], horizontal=True)
 

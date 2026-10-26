@@ -2,8 +2,8 @@ import utils.utils as utils
 
 def pacer_ajusted(pace_seg, inc):
     i = inc/100
-    if i < -0.03:
-        i = -0.03
+    if i < -0.045:
+        i = -0.045
 
     gasto_inc = utils.custo_energetico_inclinacao(i)
     gasto_plan = utils.custo_energetico_inclinacao(0)
@@ -41,7 +41,7 @@ def define_paces_by_segment(bloco_segments, pace):
                 fator_progressao = 1.05
             else:
                 # A partir do 2º plano, baixa 1.5% a cada plano
-                fator_progressao = 1.0 - (contador_planos * 0.005)
+                fator_progressao = 1.0 - (contador_planos * 0.0075)
                 
             pace_atual = pace_base * fator_progressao
         else:
@@ -49,9 +49,7 @@ def define_paces_by_segment(bloco_segments, pace):
             pace_atual = pacer_ajusted(pace, inc)
 
         # Sprint final / último plano (sem acumular com descida forte)
-        if i+1 == total_segmentos and total_segmentos > 1:
-            pace_atual = pace_base * fator_progressao*0.97
-        elif i == ultimo_plano and i != 1:
+        if i == ultimo_plano and i != 1:
             pace_atual = pace_base * fator_progressao*0.95
 
         segmentos[i] = round(pace_atual, 2)
