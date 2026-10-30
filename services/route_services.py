@@ -54,7 +54,7 @@ def hex_to_rgb(hex_str):
         return tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
     return (52, 152, 219)
 
-def export_to_gephi(G, filename="grafo_gephi.gexf"):
+def export_to_gephi(G, filename="grafo_gephi.gexf", segments=None):
     """
     Exporta o grafo no formato GEXF oficial com extensão VIZ (visual).
     Ao abrir no Gephi, o arquivo já vem com:
@@ -62,7 +62,7 @@ def export_to_gephi(G, filename="grafo_gephi.gexf"):
       - Posições (X, Y) calculadas em layout linear ordenado da corrida
       - Rótulos explicativos nas arestas e nós (Largada, Chegada, Subida 800m, etc.)
       - Espessura das arestas ponderada pela inclinação e distância
-      - Atributos completos de relevo, distância, subida e descida
+      - Atributos completos de relevo, distância, subida, descida e esforço (%), quando segments é informado
     """
     import xml.etree.ElementTree as ET
 
@@ -88,6 +88,7 @@ def export_to_gephi(G, filename="grafo_gephi.gexf"):
     ET.SubElement(edge_attrs, "attribute", {"id": "2", "title": "inclinacao_pct", "type": "float"})
     ET.SubElement(edge_attrs, "attribute", {"id": "3", "title": "subida_m", "type": "float"})
     ET.SubElement(edge_attrs, "attribute", {"id": "4", "title": "descida_m", "type": "float"})
+    ET.SubElement(edge_attrs, "attribute", {"id": "5", "title": "esforco_pct", "type": "float"})
 
     nodes_elem = ET.SubElement(graph_elem, "nodes")
     edges_elem = ET.SubElement(graph_elem, "edges")
@@ -183,7 +184,13 @@ def export_to_gephi(G, filename="grafo_gephi.gexf"):
         rgb = hex_to_rgb(hex_color)
 
         # Rótulo que aparece diretamente sobre a aresta no Gephi
-        edge_label = f"{relevo_str} | {dist:.0f}m ({inc:+.1f}%)"
+        esforco = None
+        if segments and edge_idx < len(segments):
+            esforco = segments[edge_idx].get('esforco_extra_pct')
+
+        edge_label = f"{relevo_str} | {inc:+.1f}% | {dist:.0f}m"
+        if esforco is not None:
+            edge_label += f" | Esforço {esforco:+.1f}%"
         
         # Espessura visual proporcional ao impacto do trecho
         edge_weight = max(2.0, min(10.0, 2.0 + abs(inc)))
@@ -210,6 +217,8 @@ def export_to_gephi(G, filename="grafo_gephi.gexf"):
         ET.SubElement(attvalues, "attvalue", {"for": "2", "value": f"{inc:.2f}"})
         ET.SubElement(attvalues, "attvalue", {"for": "3", "value": f"{up:.1f}"})
         ET.SubElement(attvalues, "attvalue", {"for": "4", "value": f"{down:.1f}"})
+        if esforco is not None:
+            ET.SubElement(attvalues, "attvalue", {"for": "5", "value": f"{esforco:.2f}"})
 
     tree = ET.ElementTree(root)
     tree.write(filename, encoding="utf-8", xml_declaration=True)

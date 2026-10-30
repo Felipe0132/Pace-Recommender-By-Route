@@ -94,11 +94,14 @@ def paces_to_dataframe(segments, paces_by_segment, pace_base_seg=330):
         else:
             icone = "➖ Plano"
 
+        esforco_pct = seg.get('esforco_extra_pct', 0.0)
+
         paces_data.append({
             "Trecho": f"Segmento #{i}",
             "Relevo": icone,
             "Distância": f"{dist_m:.0f} m",
             "Inclinação": f"{seg.get('inc', 0):+.1f}%",
+            "Ajuste / Esforço": f"{esforco_pct:+.1f}%",
             "Pace Sugerido": f"{min_p:02d}:{sec_p:02d} min/km",
             "Tempo no Trecho": f"{min_t:02d}:{sec_t:02d}"
         })
@@ -107,6 +110,7 @@ def paces_to_dataframe(segments, paces_by_segment, pace_base_seg=330):
     min_pm = int(pace_medio_seg // 60)
     sec_pm = int(pace_medio_seg % 60)
     pace_medio_str = f"{min_pm:02d}:{sec_pm:02d} min/km"
+    var_geral_pct = ((pace_medio_seg / pace_base_seg) - 1.0) * 100 if pace_base_seg > 0 else 0.0
 
     if total_tempo_seg >= 3600:
         h = int(total_tempo_seg // 3600)
@@ -124,6 +128,7 @@ def paces_to_dataframe(segments, paces_by_segment, pace_base_seg=330):
         "Relevo": "—",
         "Distância": f"{total_dist:.0f} m",
         "Inclinação": "—",
+        "Ajuste / Esforço": f"{var_geral_pct:+.1f}%",
         "Pace Sugerido": pace_medio_str,
         "Tempo no Trecho": tempo_total_str
     })

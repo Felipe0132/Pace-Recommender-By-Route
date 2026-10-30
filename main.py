@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import services.route_services as sv
 import views.chart_view as chvi
 from streamlit_folium import st_folium
@@ -46,10 +47,26 @@ st.info(
     """
 )
 
-mode = st.radio("Passagem da Rota:", ['Manual', "GPX"], horizontal=True)
+#mode = st.radio("Passagem da Rota:", ['Manual', "GPX"], horizontal=True)
+mode = "GPX"
 
 if mode == "GPX":
-    file_gpx = st.file_uploader("Faca Upload de um arquivo .GPX", type=["gpx"])
+    origem = st.radio(
+        "Origem da rota:",
+        ["Enviar meu arquivo .GPX", "Testar com trajeto de exemplo (Viveza)"],
+        horizontal=True
+    )
+
+    # Ao trocar de origem, limpa o cálculo anterior
+    if st.session_state.get("origem_rota") != origem:
+        st.session_state["origem_rota"] = origem
+        st.session_state.pop("calculado", None)
+
+    if origem == "Testar com trajeto de exemplo (Viveza)":
+        file_gpx = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Corrida_Viveza.gpx")
+        st.caption("Trajeto de exemplo: circuito de aproximadamente 5 km no bairro Viveza.")
+    else:
+        file_gpx = st.file_uploader("Faca Upload de um arquivo .GPX", type=["gpx"])
 
     if not file_gpx:
         # Se o usuário remover o arquivo, limpa o estado
@@ -114,7 +131,8 @@ if m:
                 "Trecho": f"Segmento #{i}",
                 "Relevo": icone,
                 "Distância": f"{seg.get('dist', 0):.0f} m",
-                "Inclinação Média": f"{seg.get('inc', 0):+.1f}%"
+                "Inclinação Média": f"{seg.get('inc', 0):+.1f}%",
+                "Ajuste / Esforço": f"{seg.get('esforco_extra_pct', 0.0):+.1f}%"
             })
 
         df = pd.DataFrame(table_sheet)
@@ -122,12 +140,13 @@ if m:
 
         # Plota o grafo topológico diretamente no frontend com nós, pesos e cores
         st.subheader("Topologia do Grafo Ponderado")
-        fig_grafo = chvi.plot_graph_topology(G_grouped)
+        # segments já recebeu o esforço em define_paces_by_segment (calculado antes da plotagem)
+        fig_grafo = chvi.plot_graph_topology(G_grouped, segments)
         if fig_grafo:
             st.pyplot(fig_grafo)
 
         # Exporta o grafo formatado com propriedades visuais para o Gephi (.gexf)
-        gephi_path = sv.export_to_gephi(G_grouped, "grafo_gephi.gexf")
+        gephi_path = sv.export_to_gephi(G_grouped, "grafo_gephi.gexf", segments)
         with open(gephi_path, "r", encoding="utf-8") as f:
             st.download_button(
                 label="📥 Baixar Grafo Pré-Configurado para o Gephi (.gexf)",

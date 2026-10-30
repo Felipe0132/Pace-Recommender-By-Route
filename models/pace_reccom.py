@@ -11,8 +11,9 @@ def pacer_ajusted(pace_seg, inc):
     fator_inc = gasto_inc/gasto_plan
 
     pace_in_inc = pace_seg*fator_inc
+    esforco_extra_pct = (fator_inc - 1.0) * 100
 
-    return pace_in_inc
+    return pace_in_inc, esforco_extra_pct
 
 def define_paces_by_segment(bloco_segments, pace):
     segmentos = dict()
@@ -36,22 +37,27 @@ def define_paces_by_segment(bloco_segments, pace):
             pace_base = pace
             
             if i == 1:
-                # Se o 1º trecho da prova for plano, segura 1% (ex: 04:53) p/ aquecer,
-                # ou use 0.99 se já quiser que saia abaixo de 04:50 (ex: 04:47)
+                # Se o 1º trecho da prova for plano, segura 5% p/ aquecer
                 fator_progressao = 1.05
             else:
-                # A partir do 2º plano, baixa 1.5% a cada plano
+                # A partir do 2º plano, baixa 0.75% a cada plano
                 fator_progressao = 1.0 - (contador_planos * 0.0075)
                 
             pace_atual = pace_base * fator_progressao
         else:
             # Subidas e descidas reais usam 100% do polinômio de grau 5
-            pace_atual = pacer_ajusted(pace, inc)
+            pace_atual, _ = pacer_ajusted(pace, inc)
 
         # Sprint final / último plano (sem acumular com descida forte)
         if i == ultimo_plano and i != 1:
             pace_atual = pace_base * fator_progressao*0.95
 
+        fator_final = pace_atual / pace
+        variacao_pct = (fator_final - 1.0) * 100
+
         segmentos[i] = round(pace_atual, 2)
+        segment['fator'] = round(fator_final, 4)
+        segment['esforco_extra_pct'] = round(variacao_pct, 2)
+        segment['esforco_pct'] = round(variacao_pct, 2)
         
     return segmentos

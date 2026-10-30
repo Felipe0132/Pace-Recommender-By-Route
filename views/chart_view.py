@@ -39,9 +39,9 @@ def plot_map_grouped(G_grouped):
 
     return m
 
-def plot_graph_topology(G_grouped):
+def plot_graph_topology(G_grouped, segments=None):
     """
-    Plota no frontend o grafo direcionado com os pesos (distância, inclinação),
+    Plota no frontend o grafo direcionado com os pesos (distância, inclinação, esforço),
     cores por relevo (Subida = Vermelho, Descida = Verde, Plano = Azul)
     e nós destacados de Largada/Chegada.
     Se for circuito fechado, desenha em anel circular; se for reta, alinha horizontalmente.
@@ -138,7 +138,7 @@ def plot_graph_topology(G_grouped):
     edge_widths = []
     edge_labels = {}
 
-    for u, v, data in edges_list:
+    for idx_aresta, (u, v, data) in enumerate(edges_list):
         cor = data.get('color', '#3498DB')
         inc = float(data.get('inc', 0))
         dist = float(data.get('distance', 0))
@@ -149,8 +149,14 @@ def plot_graph_topology(G_grouped):
         # Espessura proporcional ao impacto da inclinação
         edge_widths.append(max(2.5, min(6.0, 2.5 + abs(inc) * 0.4)))
 
-        # Rótulo em cima de cada aresta com o tipo de relevo, metragem e inclinação
-        edge_labels[(u, v)] = f"{relevo_str}\n{dist:.0f}m ({inc:+.1f}%)"
+        # Rótulo em cima de cada aresta com relevo, inclinação, distância e esforço
+        # (as arestas e os segments estão na mesma ordem)
+        rotulo = f"{relevo_str}  |  {inc:+.1f}%  |  {dist:.0f}m"
+        if segments and idx_aresta < len(segments):
+            esforco = segments[idx_aresta].get('esforco_extra_pct')
+            if esforco is not None:
+                rotulo += f"  |  Esforço {esforco:+.1f}%"
+        edge_labels[(u, v)] = rotulo
 
     # Desenha arestas direcionadas com curvatura harmônica
     rad = 0.15 if is_circuit else 0.1
@@ -171,7 +177,7 @@ def plot_graph_topology(G_grouped):
     nx.draw_networkx_edge_labels(
         G_grouped, pos,
         edge_labels=edge_labels,
-        font_size=7.5,
+        font_size=6.5,
         font_weight='bold',
         bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#BDC3C7', alpha=0.85),
         connectionstyle=f"arc3,rad={rad}",
@@ -179,7 +185,25 @@ def plot_graph_topology(G_grouped):
     )
 
     title_desc = "Circuito Fechado (Ciclo)" if is_circuit else "Percurso Ponto a Ponto"
-    ax.set_title(f"Topologia do Grafo Ponderado - {title_desc}", fontsize=11, fontweight='bold', pad=12)
+
+    # Resumo do percurso inteiro: distância total e ganhos de elevação
+    total_dist = sum(float(d.get('distance', 0)) for _, _, d in edges_list)
+    total_up = sum(float(d.get('up', 0)) for _, _, d in edges_list)
+    total_down = sum(float(d.get('down', 0)) for _, _, d in edges_list)
+    resumo = (
+        f"Distância total: {total_dist / 1000:.2f} km  |  "
+        f"Ganho de elevação: +{total_up:.0f} m  |  "
+        f"Perda de elevação: -{total_down:.0f} m"
+    )
+
+    ax.set_title(f"Topologia do Grafo Ponderado - {title_desc}", fontsize=11, fontweight='bold', pad=30)
+    ax.text(
+        0.5, 1.02, resumo,
+        transform=ax.transAxes,
+        ha='center', va='bottom',
+        fontsize=8.5,
+        bbox=dict(boxstyle='round,pad=0.35', facecolor='#F4F6F7', edgecolor='#BDC3C7')
+    )
     ax.axis('off')
     plt.tight_layout()
 
