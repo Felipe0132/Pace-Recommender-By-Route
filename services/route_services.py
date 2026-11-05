@@ -19,7 +19,7 @@ def process_gpx_route(file_gpx):
     G_grouped = graph_builder.groupByRelevo(G_segment, max_dist=lim20per)
     segments, dist, up, down = extract_infs(G_grouped)
 
-    return G_segment, G_grouped, segments, dist, up, down
+    return G_segment, G_grouped, segments, dist, up, down, points
 
 def extract_infs(G_grouped):
     segments = []
@@ -43,7 +43,10 @@ def extract_infs(G_grouped):
             "end":coords[-1:],
             "relevo":relevo,
             "dist":dist,
-            "inc":inc
+            "inc":inc,
+            "fator":data.get('fator', 1.0),
+            "esforco_extra_pct":data.get('esforco_extra_pct', 0.0),
+            "esforco_pct":data.get('esforco_pct', 0.0)
         })
 
     return segments, dist_acum, up, down
@@ -184,8 +187,10 @@ def export_to_gephi(G, filename="grafo_gephi.gexf", segments=None):
         rgb = hex_to_rgb(hex_color)
 
         # Rótulo que aparece diretamente sobre a aresta no Gephi
-        esforco = None
-        if segments and edge_idx < len(segments):
+        esforco = data.get('esforco_extra_pct')
+        if sforco_seg := (segments[edge_idx].get('esforco_extra_pct') if (segments and edge_idx < len(segments)) else None):
+            esforco = sforco_seg
+        elif segments and edge_idx < len(segments) and segments[edge_idx].get('esforco_extra_pct') is not None:
             esforco = segments[edge_idx].get('esforco_extra_pct')
 
         edge_label = f"{relevo_str} | {inc:+.1f}% | {dist:.0f}m"
@@ -223,3 +228,68 @@ def export_to_gephi(G, filename="grafo_gephi.gexf", segments=None):
     tree = ET.ElementTree(root)
     tree.write(filename, encoding="utf-8", xml_declaration=True)
     return filename
+
+def build_output_zip(df_paces, G_grouped, segments, points, resumo=None):
+    """
+    Monta em memória (sem salvar nada no disco) um .zip com a pasta output/ contendo:
+      - curva_pace_relevo.png        (imagem do gráfico de pace x relevo)
+      - tabela_ritmo_recomendado.csv (tabela final de ritmos)
+      - grafo_gephi.gexf             (grafo ponderado pré-configurado para o Gephi)
+      - output.dat                   (relatório-resumo da execução, listando os arquivos e a tabela)
+    Retorna os bytes do .zip, prontos para o st.download_button.
+    """
+    import io
+    import zipfile
+    from datetime import datetime
+    import matplotlib.pyplot as plt
+    import views.chart_view as chvi
+
+    total_dist = sum(s.get('dist', 0) for s in segments)
+
+    # Imagem do gráfico
+    img_buf = io.BytesIO()
+    fig = chvi.plot_esforco_relevo_km(points, segments, total_dist)
+    if fig is not None:
+        fig.savefig(img_buf, format="png", dpi=300, bbox_inches="tight")
+        plt.close(fig)
+
+    # Tabela CSV
+    csv_bytes = df_paces.to_csv(index=False).encode("utf-8-sig")
+
+    # Grafo .gexf
+    gexf_buf = io.BytesIO()
+    export_to_gephi(G_grouped, gexf_buf, segments)
+
+    # Relatório output.dat
+    linhas = [
+        "=" * 70,
+        "RECOMENDAÇÃO DE PACE - RESULTADO DA EXECUÇÃO",
+        "=" * 70,
+        f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
+        "",
+    ]
+    for chave, valor in (resumo or {}).items():
+        linhas.append(f"{chave}: {valor}")
+    linhas += [
+        "",
+        "Arquivos nesta pasta:",
+        "  - curva_pace_relevo.png  (gráfico de pace x relevo)",
+        "  - tabela_ritmo_recomendado.csv  (tabela de ritmos)",
+        "  - grafo_gephi.gexf  (grafo para o Gephi)",
+        "",
+        "-" * 70,
+        "TABELA DE RITMO RECOMENDADO",
+        "-" * 70,
+        df_paces.to_string(index=False),
+        "",
+    ]
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        if img_buf.getbuffer().nbytes:
+            zf.writestr("output/curva_pace_relevo.png", img_buf.getvalue())
+        zf.writestr("output/tabela_ritmo_recomendado.csv", csv_bytes)
+        zf.writestr("output/grafo_gephi.gexf", gexf_buf.getvalue())
+        zf.writestr("output/output.dat", "\n".join(linhas))
+
+    return zip_buf.getvalue()

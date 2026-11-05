@@ -2,6 +2,7 @@ import utils as utils
 import networkx as nx
 import utils.utils as utils
 import Enums.enum as enum
+import models.pace_reccom as pr
 
 TRHESHOLD_INC = 3
 TRHESHOLD_DIST = 430
@@ -106,6 +107,7 @@ def groupByRelevo(G, max_dist=None):
         return None
 
     G_grouped = nx.DiGraph()
+    blocos = []
 
     firstNode = None
     relevo_atual = None
@@ -138,17 +140,18 @@ def groupByRelevo(G, max_dist=None):
         else:
             heigthest = max(inc_seg, key=abs) if inc_seg else 0
 
-            G_grouped.add_edge(
-                firstNode,
-                u,
-                distance=dist_acum,
-                coords=coords_seg,
-                relevo=relevo_atual,
-                up=up_acum,
-                down=down_acum,
-                inc=heigthest,
-                color=enum.ColorByRelevo[relevo_atual.name].value
-            )
+            blocos.append({
+                'u': firstNode,
+                'v': u,
+                'distance': dist_acum,
+                'coords': coords_seg,
+                'relevo': relevo_atual,
+                'up': up_acum,
+                'down': down_acum,
+                'inc': heigthest,
+                'inc_seg': list(inc_seg),
+                'color': enum.ColorByRelevo[relevo_atual.name].value
+            })
 
             firstNode = u
             relevo_atual = relevo
@@ -161,16 +164,37 @@ def groupByRelevo(G, max_dist=None):
     if relevo_atual is not None and firstNode is not None:
         heigthest = max(inc_seg, key=abs) if inc_seg else 0
 
+        blocos.append({
+            'u': firstNode,
+            'v': v,
+            'distance': dist_acum,
+            'coords': coords_seg,
+            'relevo': relevo_atual,
+            'up': up_acum,
+            'down': down_acum,
+            'inc': heigthest,
+            'inc_seg': list(inc_seg),
+            'color': enum.ColorByRelevo[relevo_atual.name].value
+        })
+
+    # Calcula esforços com base em 70% dos 20% do total (max_dist * 0.70) e junta sequenciais de mesmo esforço
+    min_dist_prog = (max_dist * 0.70) if max_dist is not None else 700
+    blocos_finais = pr.calcular_esforcos_e_juntar_blocos(blocos, min_dist_progressao=min_dist_prog)
+
+    for b in blocos_finais:
         G_grouped.add_edge(
-            firstNode,
-            v, 
-            distance=dist_acum, 
-            coords=coords_seg,
-            relevo=relevo_atual,
-            up=up_acum,
-            down=down_acum,
-            inc=heigthest,
-            color=enum.ColorByRelevo[relevo_atual.name].value
+            b['u'],
+            b['v'],
+            distance=b['distance'],
+            coords=b['coords'],
+            relevo=b['relevo'],
+            up=b['up'],
+            down=b['down'],
+            inc=b['inc'],
+            color=b['color'],
+            fator=b.get('fator', 1.0),
+            esforco_extra_pct=b.get('esforco_extra_pct', 0.0),
+            esforco_pct=b.get('esforco_pct', 0.0)
         )
 
     return G_grouped

@@ -182,6 +182,9 @@ O projeto adota uma estrutura em camadas, com separação estrita de responsabil
 ├── utils/              # Funções matemáticas puras (Haversine, Minetti, conversão de tempo)
 │   └── utils.py
 ├── assets/             # Imagens e capturas de tela da documentação
+├── in/                 # Arquivos de entrada, incluindo o GPX de exemplo da Viveza
+├── out/                # Resultados e arquivos exportados
+│   └── imagens/         # Gráficos gerados localmente
 ├── main.py             # Aplicação Streamlit interativa e reativa
 └── requirements.txt    # Dependências do projeto
 ```

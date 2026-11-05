@@ -1,5 +1,3 @@
-import osmnx as ox
-from itertools import groupby
 import gpxpy
 import networkx as nx
 
